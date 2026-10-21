@@ -1,0 +1,78 @@
+{
+  "id": "zendesk",
+  "name": "Zendesk",
+  "name_en": "Zendesk",
+  "version": "1.0.0",
+  "description": "Gestión de tickets de soporte en Zendesk: crear, actualizar, comentar y buscar tickets",
+  "description_en": "Support ticket management in Zendesk: create, update, comment on and search tickets",
+  "icon": "icon.svg",
+  "category": "itsm",
+  "category_en": "itsm",
+  "keywords": [
+    "zendesk",
+    "tickets",
+    "soporte",
+    "support",
+    "helpdesk",
+    "mesa de ayuda",
+    "itsm",
+    "casos"
+  ],
+  "library": {
+    "package": "ruvic-zendesk-connector",
+    "install": "pip install git+https://github.com/RuvicDev/CON-013-Zendesk.git#subdirectory=lib",
+    "import_name": "ruvic_zendesk_connector"
+  },
+  "auth_modes": [
+    {
+      "id": "api_token",
+      "label": "Correo + API Token",
+      "fields": [
+        {
+          "key": "subdomain",
+          "label": "Subdominio de Zendesk",
+          "type": "text",
+          "required": true,
+          "placeholder": "miempresa",
+          "help_text": "La parte antes de .zendesk.com (ej. 'miempresa' para miempresa.zendesk.com)"
+        },
+        {
+          "key": "email",
+          "label": "Correo del agente",
+          "type": "text",
+          "required": true,
+          "placeholder": "agente@miempresa.com",
+          "help_text": "Correo del agente o administrador dueño del API Token"
+        },
+        {
+          "key": "api_token",
+          "label": "API Token",
+          "type": "password",
+          "secret": true,
+          "required": true,
+          "help_text": "Admin Center → Apps e integraciones → API de Zendesk → Agregar token de API"
+        },
+        {
+          "key": "connect_timeout",
+          "label": "Timeout de conexión (segundos)",
+          "type": "number",
+          "required": false,
+          "default": "15"
+        }
+      ]
+    }
+  ],
+  "env_prefix": "RUVIC_ZENDESK_",
+  "operations": [
+    "ticket.create",
+    "ticket.update",
+    "ticket.comment",
+    "ticket.search",
+    "ticket.read"
+  ],
+  "test_connection": true,
+  "docs": {
+    "skill": "SKILL.md",
+    "permissions_note": "El API Token actúa con los permisos del agente cuyo correo se configura. Usa un agente dedicado (no un administrador) con acceso a los grupos y tickets que el agente de IA deba gestionar. El acceso por token se habilita en Admin Center → Apps e integraciones → API de Zendesk → Configuración → Acceso por token."
+  }
+}

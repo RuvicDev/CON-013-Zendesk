@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="doc_title">Conector Zendesk — Guía de configuración | Ruvic</title>
+  <link rel="stylesheet" href="assets/ruvic.css">
+</head>
+<body class="guide">
+<div class="guide-shell">
+<main class="ruvic-container">
+  <nav class="ruvic-toc" aria-label="Índice">
+    <h2 data-i18n="toc_title">Contenido</h2>
+    <ol>
+      <li><a href="#que-es" data-i18n="toc.que_es">¿Qué es y para qué sirve?</a></li>
+      <li><a href="#prerrequisitos" data-i18n="toc.prerrequisitos">Prerrequisitos</a></li>
+      <li><a href="#configuracion-fabricante" data-i18n="toc.configuracion_fabricante">Configuración en el fabricante</a></li>
+      <li><a href="#permisos" data-i18n="toc.permisos">Permisos requeridos</a></li>
+      <li><a href="#configuracion-ruvic" data-i18n="toc.configuracion_ruvic">Configuración en Ruvic</a></li>
+      <li><a href="#verificacion" data-i18n="toc.verificacion">Verificación</a></li>
+      <li><a href="#solucion-problemas" data-i18n="toc.solucion_problemas">Solución de problemas</a></li>
+      <li><a href="#faq-seguridad" data-i18n="toc.faq_seguridad">Preguntas frecuentes y notas de seguridad</a></li>
+    </ol>
+  </nav>
+
+  <h1 data-i18n="guide_title">Conector Zendesk — Guía de configuración</h1>
+  <p class="guide-updated" data-i18n="guide_updated">Última actualización: octubre 2026</p>
+
+  <section id="que-es">
+    <h2 data-i18n="section.que_es">¿Qué es y para qué sirve?</h2>
+    <p data-i18n="que_es.body">El conector Zendesk permite que el agente de Ruvic gestione los tickets de tu mesa de ayuda en Zendesk Support: crear tickets, actualizarlos, comentarlos y buscarlos. Una vez configurado, puedes pedirle cosas como:</p>
+    <ul>
+      <li data-i18n="que_es.example1">"Abre un ticket urgente: el cliente ana@cliente.com no puede ingresar al portal."</li>
+      <li data-i18n="que_es.example2">"¿Qué tickets abiertos de prioridad alta hay desde el lunes?"</li>
+      <li data-i18n="que_es.example3">"Agrega una nota interna al ticket 124 y déjalo en pendiente."</li>
+    </ul>
+    <p data-i18n="que_es.ops_intro">Operaciones soportadas:</p>
+    <table>
+      <thead><tr><th data-i18n="table.operacion">Operación</th><th data-i18n="table.que_hace">Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><code>ticket.create</code></td><td data-i18n="op.1">Crea un ticket con asunto, descripción, prioridad, solicitante y etiquetas</td></tr>
+        <tr><td><code>ticket.update</code></td><td data-i18n="op.2">Cambia estado, prioridad, agente asignado o etiquetas</td></tr>
+        <tr><td><code>ticket.comment</code></td><td data-i18n="op.3">Agrega un comentario público o una nota interna</td></tr>
+        <tr><td><code>ticket.search</code></td><td data-i18n="op.4">Busca tickets con la sintaxis de búsqueda de Zendesk</td></tr>
+        <tr><td><code>ticket.read</code></td><td data-i18n="op.5">Consulta un ticket y, opcionalmente, sus comentarios</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-warning">
+      <span class="callout-title" data-i18n="callout.main.title">Este conector escribe en tu mesa de ayuda</span>
+      <span data-i18n="callout.main.body">Crear, actualizar y comentar cambia tickets reales. Los comentarios públicos le llegan por correo al cliente; el agente usa notas internas cuando se le pide.</span>
+    </div>
+  </section>
+
+  <section id="prerrequisitos">
+    <h2 data-i18n="section.prerrequisitos">Prerrequisitos</h2>
+    <ul>
+      <li data-i18n="prereq.1">Una cuenta de Zendesk Support (cualquier plan; hay prueba gratuita de 14 días).</li>
+      <li data-i18n="prereq.2">Acceso de administrador para habilitar el acceso por token en la API.</li>
+      <li data-i18n="prereq.3">Un agente dedicado para Ruvic, con acceso a los grupos que debe gestionar.</li>
+    </ul>
+  </section>
+
+  <section id="configuracion-fabricante">
+    <h2 data-i18n="section.configuracion_fabricante">Configuración en el fabricante</h2>
+    <p data-i18n="fabricante.intro">Vas a habilitar el acceso por API Token y a generar un token asociado a un agente dedicado.</p>
+    <ol class="ruvic-steps">
+      <li>
+        <strong data-i18n="step.1.label">Crea el agente dedicado.</strong>
+        <p data-i18n="step.1.body">En <strong>Admin Center → Personas → Miembros del equipo → Agregar usuario</strong>, crea un agente (ej. <code>ruvic@miempresa.com</code>) con rol <strong>Agente</strong> y asígnalo a los grupos que deba atender.</p>
+      </li>
+      <li>
+        <strong data-i18n="step.2.label">Activa el acceso por token.</strong>
+        <p data-i18n="step.2.body">En <strong>Admin Center → Apps e integraciones → API de Zendesk → Configuración</strong>, activa <strong>Acceso por token</strong>.</p>
+        <div class="screenshot-placeholder" data-i18n="img.step2.placeholder">[ Captura: configuración de la API de Zendesk con el acceso por token activado — reemplazar por assets/img/zendesk-api.png ]</div>
+      </li>
+      <li>
+        <strong data-i18n="step.3.label">Genera el API Token.</strong>
+        <p data-i18n="step.3.body">Pulsa <strong>Agregar token de API</strong>, nómbralo "Ruvic" y copia el token de inmediato: Zendesk solo lo muestra una vez.</p>
+      </li>
+      <li>
+        <strong data-i18n="step.4.label">Anota tu subdominio.</strong>
+        <p data-i18n="step.4.body">Es la parte antes de <code>.zendesk.com</code> en la URL de tu cuenta (ej. <code>miempresa</code>).</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="permisos">
+    <h2 data-i18n="section.permisos">Permisos requeridos</h2>
+    <p data-i18n="permisos.intro">El API Token actúa con los permisos del agente configurado. Principio de mínimo privilegio: usa un agente, no un administrador.</p>
+    <table>
+      <thead><tr><th data-i18n="table.permiso">Permiso</th><th data-i18n="table.para_que">Para qué lo usa el conector</th></tr></thead>
+      <tbody>
+        <tr><td><code>Rol Agente</code></td><td data-i18n="perm.1.desc">Crear, actualizar, comentar y ver tickets de sus grupos</td></tr>
+        <tr><td><code>Acceso por token (API)</code></td><td data-i18n="perm.2.desc">Autenticar las peticiones del conector con correo + token</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="configuracion-ruvic">
+    <h2 data-i18n="section.configuracion_ruvic">Configuración en Ruvic</h2>
+    <p data-i18n="ruvic.intro">Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Zendesk</strong> y pulsa <strong>Configurar</strong>. Diligencia el formulario con los valores de la sección anterior:</p>
+    <table>
+      <thead><tr><th data-i18n="table.campo">Campo del formulario</th><th data-i18n="table.valor">Valor</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="field.subdomain">Subdominio de Zendesk</td><td data-i18n="field.subdomain.desc">La parte antes de <code>.zendesk.com</code>, ej. <code>miempresa</code></td></tr>
+        <tr><td data-i18n="field.email">Correo del agente</td><td data-i18n="field.email.desc">Correo del agente dedicado dueño del token</td></tr>
+        <tr><td data-i18n="field.api_token">API Token</td><td data-i18n="field.api_token.desc">El token del paso 3. Se guarda cifrado y no se vuelve a mostrar</td></tr>
+        <tr><td data-i18n="field.connect_timeout">Timeout de conexión (segundos)</td><td data-i18n="field.connect_timeout.desc">Opcional; <code>15</code> segundos por defecto</td></tr>
+      </tbody>
+    </table>
+    <p data-i18n="ruvic.save">Guarda y pulsa <strong>Probar conexión</strong>: la plataforma valida las credenciales y el acceso.</p>
+    <div class="screenshot-placeholder" data-i18n="img.formulario.placeholder">[ Captura: formulario del conector Zendesk en Settings → Conectores — reemplazar por assets/img/zendesk-form.png ]</div>
+  </section>
+
+  <section id="verificacion">
+    <h2 data-i18n="section.verificacion">Verificación</h2>
+    <ol class="ruvic-steps">
+      <li>
+        <strong data-i18n="verif.1.label">Test de conexión exitoso.</strong>
+        <p data-i18n="verif.1.body">El botón <em>Probar conexión</em> debe responder con éxito y la tarjeta debe quedar en estado <strong>Configurado</strong>.</p>
+      </li>
+      <li>
+        <strong data-i18n="verif.2.label">Prueba mínima con el agente.</strong>
+        <p data-i18n="verif.2.body">Abre una conversación nueva y pídele:</p>
+        <blockquote data-i18n="verif.2.prompt">"¿Cuántos tickets abiertos hay en Zendesk y cuál es el más reciente?"</blockquote>
+        <p data-i18n="verif.2.result">El agente debe responder con tickets reales de tu cuenta. Para probar escritura, pídele crear un ticket de prueba y luego resolverlo.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="solucion-problemas">
+    <h2 data-i18n="section.solucion_problemas">Solución de problemas</h2>
+    <table>
+      <thead><tr><th data-i18n="table.sintoma">Mensaje / síntoma</th><th data-i18n="table.causa">Causa probable y solución</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="trouble.1.symptom">"Correo o API Token inválidos" (401)</td><td data-i18n="trouble.1.fix">El token fue revocado, el correo no es el del dueño del token o el acceso por token está desactivado.</td></tr>
+        <tr><td data-i18n="trouble.2.symptom">"No existe una cuenta de Zendesk en …"</td><td data-i18n="trouble.2.fix">El subdominio está mal escrito. Usa solo la parte antes de .zendesk.com.</td></tr>
+        <tr><td data-i18n="trouble.3.symptom">"El agente configurado no tiene permiso" (403)</td><td data-i18n="trouble.3.fix">El agente no pertenece al grupo del ticket o su rol no permite la acción.</td></tr>
+        <tr><td data-i18n="trouble.4.symptom">"status 'closed' inválido"</td><td data-i18n="trouble.4.fix">Zendesk no permite cerrar tickets por API; márcalo como <code>solved</code>.</td></tr>
+        <tr><td data-i18n="trouble.5.symptom">"Límite de peticiones alcanzado" (429)</td><td data-i18n="trouble.5.fix">Tu plan limita las peticiones por minuto. Espera los segundos indicados.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="faq-seguridad">
+    <h2 data-i18n="section.faq_seguridad">Preguntas frecuentes y notas de seguridad</h2>
+    <h3 data-i18n="faq.1.q">¿El cliente recibe los comentarios que agrega el agente?</h3>
+    <p data-i18n="faq.1.a">Sí, si son públicos (el valor por defecto). Pide explícitamente "nota interna" para que no le llegue.</p>
+
+    <h3 data-i18n="faq.2.q">¿Dónde queda guardado el API Token?</h3>
+    <p data-i18n="faq.2.a">Como secreto cifrado en la plataforma. La interfaz no vuelve a mostrarlo.</p>
+
+    <h3 data-i18n="faq.3.q">¿Cómo roto o revoco el token?</h3>
+    <p data-i18n="faq.3.a">Crea uno nuevo en Admin Center → API de Zendesk, actualízalo en el formulario, prueba la conexión y elimina el anterior. Si se compromete, elimínalo de inmediato.</p>
+
+  </section>
+
+</main>
+</div>
+
+<script>
+  const I18N = {
+  "es": {
+    "doc_title": "Conector Zendesk — Guía de configuración | Ruvic",
+    "toc_title": "Contenido",
+    "toc.que_es": "¿Qué es y para qué sirve?",
+    "toc.prerrequisitos": "Prerrequisitos",
+    "toc.configuracion_fabricante": "Configuración en el fabricante",
+    "toc.permisos": "Permisos requeridos",
+    "toc.configuracion_ruvic": "Configuración en Ruvic",
+    "toc.verificacion": "Verificación",
+    "toc.solucion_problemas": "Solución de problemas",
+    "toc.faq_seguridad": "Preguntas frecuentes y notas de seguridad",
+    "guide_title": "Conector Zendesk — Guía de configuración",
+    "guide_updated": "Última actualización: octubre 2026",
+    "section.que_es": "¿Qué es y para qué sirve?",
+    "que_es.body": "El conector Zendesk permite que el agente de Ruvic gestione los tickets de tu mesa de ayuda en Zendesk Support: crear tickets, actualizarlos, comentarlos y buscarlos. Una vez configurado, puedes pedirle cosas como:",
+    "que_es.example1": "\"Abre un ticket urgente: el cliente ana@cliente.com no puede ingresar al portal.\"",
+    "que_es.example2": "\"¿Qué tickets abiertos de prioridad alta hay desde el lunes?\"",
+    "que_es.example3": "\"Agrega una nota interna al ticket 124 y déjalo en pendiente.\"",
+    "que_es.ops_intro": "Operaciones soportadas:",
+    "table.operacion": "Operación",
+    "table.que_hace": "Qué hace",
+    "op.1": "Crea un ticket con asunto, descripción, prioridad, solicitante y etiquetas",
+    "op.2": "Cambia estado, prioridad, agente asignado o etiquetas",
+    "op.3": "Agrega un comentario público o una nota interna",
+    "op.4": "Busca tickets con la sintaxis de búsqueda de Zendesk",
+    "op.5": "Consulta un ticket y, opcionalmente, sus comentarios",
+    "callout.main.title": "Este conector escribe en tu mesa de ayuda",
+    "callout.main.body": "Crear, actualizar y comentar cambia tickets reales. Los comentarios públicos le llegan por correo al cliente; el agente usa notas internas cuando se le pide.",
+    "section.prerrequisitos": "Prerrequisitos",
+    "prereq.1": "Una cuenta de Zendesk Support (cualquier plan; hay prueba gratuita de 14 días).",
+    "prereq.2": "Acceso de administrador para habilitar el acceso por token en la API.",
+    "prereq.3": "Un agente dedicado para Ruvic, con acceso a los grupos que debe gestionar.",
+    "section.configuracion_fabricante": "Configuración en el fabricante",
+    "fabricante.intro": "Vas a habilitar el acceso por API Token y a generar un token asociado a un agente dedicado.",
+    "step.1.label": "Crea el agente dedicado.",
+    "step.1.body": "En <strong>Admin Center → Personas → Miembros del equipo → Agregar usuario</strong>, crea un agente (ej. <code>ruvic@miempresa.com</code>) con rol <strong>Agente</strong> y asígnalo a los grupos que deba atender.",
+    "step.2.label": "Activa el acceso por token.",
+    "step.2.body": "En <strong>Admin Center → Apps e integraciones → API de Zendesk → Configuración</strong>, activa <strong>Acceso por token</strong>.",
+    "img.step2.placeholder": "[ Captura: configuración de la API de Zendesk con el acceso por token activado — reemplazar por assets/img/zendesk-api.png ]",
+    "step.3.label": "Genera el API Token.",
+    "step.3.body": "Pulsa <strong>Agregar token de API</strong>, nómbralo \"Ruvic\" y copia el token de inmediato: Zendesk solo lo muestra una vez.",
+    "step.4.label": "Anota tu subdominio.",
+    "step.4.body": "Es la parte antes de <code>.zendesk.com</code> en la URL de tu cuenta (ej. <code>miempresa</code>).",
+    "section.permisos": "Permisos requeridos",
+    "permisos.intro": "El API Token actúa con los permisos del agente configurado. Principio de mínimo privilegio: usa un agente, no un administrador.",
+    "table.permiso": "Permiso",
+    "table.para_que": "Para qué lo usa el conector",
+    "perm.1.desc": "Crear, actualizar, comentar y ver tickets de sus grupos",
+    "perm.2.desc": "Autenticar las peticiones del conector con correo + token",
+    "section.configuracion_ruvic": "Configuración en Ruvic",
+    "ruvic.intro": "Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Zendesk</strong> y pulsa <strong>Configurar</strong>. Diligencia el formulario con los valores de la sección anterior:",
+    "table.campo": "Campo del formulario",
+    "table.valor": "Valor",
+    "field.subdomain": "Subdominio de Zendesk",
+    "field.subdomain.desc": "La parte antes de <code>.zendesk.com</code>, ej. <code>miempresa</code>",
+    "field.email": "Correo del agente",
+    "field.email.desc": "Correo del agente dedicado dueño del token",
+    "field.api_token": "API Token",
+    "field.api_token.desc": "El token del paso 3. Se guarda cifrado y no se vuelve a mostrar",
+    "field.connect_timeout": "Timeout de conexión (segundos)",
+    "field.connect_timeout.desc": "Opcional; <code>15</code> segundos por defecto",
+    "ruvic.save": "Guarda y pulsa <strong>Probar conexión</strong>: la plataforma valida las credenciales y el acceso.",
+    "img.formulario.placeholder": "[ Captura: formulario del conector Zendesk en Settings → Conectores — reemplazar por assets/img/zendesk-form.png ]",
+    "section.verificacion": "Verificación",
+    "verif.1.label": "Test de conexión exitoso.",
+    "verif.1.body": "El botón <em>Probar conexión</em> debe responder con éxito y la tarjeta debe quedar en estado <strong>Configurado</strong>.",
+    "verif.2.label": "Prueba mínima con el agente.",
+    "verif.2.body": "Abre una conversación nueva y pídele:",
+    "verif.2.prompt": "\"¿Cuántos tickets abiertos hay en Zendesk y cuál es el más reciente?\"",
+    "verif.2.result": "El agente debe responder con tickets reales de tu cuenta. Para probar escritura, pídele crear un ticket de prueba y luego resolverlo.",
+    "section.solucion_problemas": "Solución de problemas",
+    "table.sintoma": "Mensaje / síntoma",
+    "table.causa": "Causa probable y solución",
+    "trouble.1.symptom": "\"Correo o API Token inválidos\" (401)",
+    "trouble.1.fix": "El token fue revocado, el correo no es el del dueño del token o el acceso por token está desactivado.",
+    "trouble.2.symptom": "\"No existe una cuenta de Zendesk en …\"",
+    "trouble.2.fix": "El subdominio está mal escrito. Usa solo la parte antes de .zendesk.com.",
+    "trouble.3.symptom": "\"El agente configurado no tiene permiso\" (403)",
+    "trouble.3.fix": "El agente no pertenece al grupo del ticket o su rol no permite la acción.",
+    "trouble.4.symptom": "\"status 'closed' inválido\"",
+    "trouble.4.fix": "Zendesk no permite cerrar tickets por API; márcalo como <code>solved</code>.",
+    "trouble.5.symptom": "\"Límite de peticiones alcanzado\" (429)",
+    "trouble.5.fix": "Tu plan limita las peticiones por minuto. Espera los segundos indicados.",
+    "section.faq_seguridad": "Preguntas frecuentes y notas de seguridad",
+    "faq.1.q": "¿El cliente recibe los comentarios que agrega el agente?",
+    "faq.1.a": "Sí, si son públicos (el valor por defecto). Pide explícitamente \"nota interna\" para que no le llegue.",
+    "faq.2.q": "¿Dónde queda guardado el API Token?",
+    "faq.2.a": "Como secreto cifrado en la plataforma. La interfaz no vuelve a mostrarlo.",
+    "faq.3.q": "¿Cómo roto o revoco el token?",
+    "faq.3.a": "Crea uno nuevo en Admin Center → API de Zendesk, actualízalo en el formulario, prueba la conexión y elimina el anterior. Si se compromete, elimínalo de inmediato.",
+  },
+  "en": {
+    "doc_title": "Zendesk Connector — Setup Guide | Ruvic",
+    "toc_title": "Contents",
+    "toc.que_es": "What is it and what is it for?",
+    "toc.prerrequisitos": "Prerequisites",
+    "toc.configuracion_fabricante": "Vendor-side setup",
+    "toc.permisos": "Required permissions",
+    "toc.configuracion_ruvic": "Setup in Ruvic",
+    "toc.verificacion": "Verification",
+    "toc.solucion_problemas": "Troubleshooting",
+    "toc.faq_seguridad": "FAQ and security notes",
+    "guide_title": "Zendesk Connector — Setup Guide",
+    "guide_updated": "Last updated: October 2026",
+    "section.que_es": "What is it and what is it for?",
+    "que_es.body": "The Zendesk connector lets the Ruvic agent manage your Zendesk Support help desk tickets: create, update, comment on and search tickets. Once configured, you can ask things like:",
+    "que_es.example1": "\"Open an urgent ticket: customer ana@cliente.com can't log into the portal.\"",
+    "que_es.example2": "\"Which high-priority open tickets are there since Monday?\"",
+    "que_es.example3": "\"Add an internal note to ticket 124 and set it to pending.\"",
+    "que_es.ops_intro": "Supported operations:",
+    "table.operacion": "Operation",
+    "table.que_hace": "What it does",
+    "op.1": "Creates a ticket with subject, description, priority, requester and tags",
+    "op.2": "Changes status, priority, assignee or tags",
+    "op.3": "Adds a public comment or an internal note",
+    "op.4": "Searches tickets with Zendesk search syntax",
+    "op.5": "Reads a ticket and, optionally, its comments",
+    "callout.main.title": "This connector writes to your help desk",
+    "callout.main.body": "Creating, updating and commenting changes real tickets. Public comments are emailed to the customer; the agent uses internal notes when asked.",
+    "section.prerrequisitos": "Prerequisites",
+    "prereq.1": "A Zendesk Support account (any plan; there is a 14-day free trial).",
+    "prereq.2": "Admin access to enable token access to the API.",
+    "prereq.3": "A dedicated agent for Ruvic, with access to the groups it should manage.",
+    "section.configuracion_fabricante": "Vendor-side setup",
+    "fabricante.intro": "You will enable API token access and generate a token tied to a dedicated agent.",
+    "step.1.label": "Create the dedicated agent.",
+    "step.1.body": "In <strong>Admin Center → People → Team members → Add user</strong>, create an agent (e.g. <code>ruvic@miempresa.com</code>) with the <strong>Agent</strong> role and assign it to the groups it should handle.",
+    "step.2.label": "Enable token access.",
+    "step.2.body": "In <strong>Admin Center → Apps and integrations → Zendesk API → Settings</strong>, turn on <strong>Token access</strong>.",
+    "img.step2.placeholder": "[ Screenshot: Zendesk API settings with token access enabled — replace with assets/img/zendesk-api.png ]",
+    "step.3.label": "Generate the API token.",
+    "step.3.body": "Click <strong>Add API token</strong>, name it \"Ruvic\" and copy the token right away: Zendesk only shows it once.",
+    "step.4.label": "Note your subdomain.",
+    "step.4.body": "It's the part before <code>.zendesk.com</code> in your account URL (e.g. <code>miempresa</code>).",
+    "section.permisos": "Required permissions",
+    "permisos.intro": "The API token acts with the configured agent's permissions. Least privilege: use an agent, not an admin.",
+    "table.permiso": "Permission",
+    "table.para_que": "What the connector uses it for",
+    "perm.1.desc": "Create, update, comment on and view tickets in its groups",
+    "perm.2.desc": "Authenticate connector requests with email + token",
+    "section.configuracion_ruvic": "Setup in Ruvic",
+    "ruvic.intro": "Go to <strong>Settings → Connectors</strong>, find the <strong>Zendesk</strong> card and click <strong>Configure</strong>. Fill in the form with the values from the previous section:",
+    "table.campo": "Form field",
+    "table.valor": "Value",
+    "field.subdomain": "Zendesk subdomain",
+    "field.subdomain.desc": "The part before <code>.zendesk.com</code>, e.g. <code>miempresa</code>",
+    "field.email": "Agent email",
+    "field.email.desc": "Email of the dedicated agent that owns the token",
+    "field.api_token": "API Token",
+    "field.api_token.desc": "The token from step 3. Stored encrypted and never shown again",
+    "field.connect_timeout": "Connection timeout (seconds)",
+    "field.connect_timeout.desc": "Optional; <code>15</code> seconds by default",
+    "ruvic.save": "Save and click <strong>Test connection</strong>: the platform validates the credentials and access.",
+    "img.formulario.placeholder": "[ Screenshot: Zendesk connector form in Settings → Connectors — replace with assets/img/zendesk-form.png ]",
+    "section.verificacion": "Verification",
+    "verif.1.label": "Successful connection test.",
+    "verif.1.body": "The <em>Test connection</em> button must succeed and the card must show <strong>Configured</strong>.",
+    "verif.2.label": "Minimal test with the agent.",
+    "verif.2.body": "Open a new conversation and ask:",
+    "verif.2.prompt": "\"How many open tickets are in Zendesk and which is the most recent?\"",
+    "verif.2.result": "The agent should answer with real tickets from your account. To test writes, ask it to create a test ticket and then solve it.",
+    "section.solucion_problemas": "Troubleshooting",
+    "table.sintoma": "Message / symptom",
+    "table.causa": "Likely cause and fix",
+    "trouble.1.symptom": "\"Invalid email or API token\" (401)",
+    "trouble.1.fix": "The token was revoked, the email is not the token owner's, or token access is disabled.",
+    "trouble.2.symptom": "\"No Zendesk account at …\"",
+    "trouble.2.fix": "The subdomain is misspelled. Use only the part before .zendesk.com.",
+    "trouble.3.symptom": "\"The configured agent lacks permission\" (403)",
+    "trouble.3.fix": "The agent isn't in the ticket's group or its role doesn't allow the action.",
+    "trouble.4.symptom": "\"status 'closed' invalid\"",
+    "trouble.4.fix": "Zendesk doesn't allow closing tickets via API; set it to <code>solved</code>.",
+    "trouble.5.symptom": "\"Rate limit reached\" (429)",
+    "trouble.5.fix": "Your plan limits requests per minute. Wait the indicated seconds.",
+    "section.faq_seguridad": "FAQ and security notes",
+    "faq.1.q": "Does the customer receive the comments the agent adds?",
+    "faq.1.a": "Yes, if they are public (the default). Explicitly ask for an \"internal note\" so it isn't sent.",
+    "faq.2.q": "Where is the API token stored?",
+    "faq.2.a": "As an encrypted secret on the platform. The interface never shows it again.",
+    "faq.3.q": "How do I rotate or revoke the token?",
+    "faq.3.a": "Create a new one in Admin Center → Zendesk API, update the form, test the connection and delete the old one. If compromised, delete it immediately.",
+  },
+  };
+  /* El portal aplica el idioma del usuario (localStorage ruvic-docs-lang)
+     y actualiza [data-i18n], [data-i18n-placeholder] y [data-i18n-alt]. */
+</script>
+</body>
+</html>
